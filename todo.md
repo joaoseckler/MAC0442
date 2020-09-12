@@ -1,0 +1,3 @@
+- Add readme
+- Add makefile
+- shell.c: Split input into space separated words
