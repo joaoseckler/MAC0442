@@ -1,0 +1,12 @@
+Alunos:
+Emanuel Lima de Sousa - 9009493
+João Seckler - 
+
+Compilação:
+Para compilar, basta executar make.
+
+Execução:
+Para executar, basta rodar ./bccsh
+
+TODO:
+bccsh.c: Split input into space separated words
