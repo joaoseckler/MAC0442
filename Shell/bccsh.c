@@ -33,5 +33,5 @@ int main()
   }
   printf("\n");
 
-  return 1;
+  return EXIT_SUCCESS;
 }
