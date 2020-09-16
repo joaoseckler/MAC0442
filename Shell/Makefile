@@ -1,13 +1,13 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -pedantic -std=c11
-RL=-lreadline
+DEPFLAGS=-lreadline
 TARGET=bccsh
 
-$(TARGET): $(TARGET).c $(TARGET).h
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c $(RL)
+$(TARGET): builtin.o $(TARGET).c
+	$(CC) $(CFLAGS) -o $(TARGET) builtin.o $(TARGET).c $(DEPFLAGS)
 
-clang: $(TARGET).c $(TARGET).h
-	clang $(CFLAGS) -o $(TARGET) $(TARGET).c $(RL)
+builtin.o: builtin.c builtin.h
+	$(CC) $(CFLAGS) -c builtin.c
 
 clean:
 	rm -f *.o *.out $(TARGET)

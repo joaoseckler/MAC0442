@@ -9,7 +9,6 @@ Execução:
 Para executar, basta rodar ./bccsh
 
 TODO:
-> Split input into space separated words
+> Split input into space separated words -> Vê a função split em builtin.c
 > Usar $PWD e $USER no prompt
 > Prompt e chamadas externas: João
-> Comandos embutidos: Emanuel
