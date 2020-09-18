@@ -39,5 +39,5 @@ void ln_s(char* command)
 
 void cd(char* path)
 {
-  chdir(path);
+    chdir(path);
 }
