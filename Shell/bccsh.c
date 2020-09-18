@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #include "builtin.h"
 
@@ -13,6 +14,7 @@
 #define MAX_PROMPT_LENGTH 250
 
 void split(char *, char **);
+void handler();
 
 int main()
 {
@@ -20,6 +22,10 @@ int main()
     char* ptrv[MAX_WORDS];
     int wstatus, err;
     pid_t child;
+
+    struct sigaction act;
+    act.sa_handler = handler;
+    sigaction(SIGINT, &act, NULL);
 
     using_history();
 
@@ -82,4 +88,8 @@ void split(char* string, char ** ptrv)
         }
     }
     ptrv[k] = NULL;
+}
+
+void handler() {
+  printf("\n");
 }
