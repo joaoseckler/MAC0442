@@ -37,17 +37,3 @@ void ln_s(char* command)
     symlink(file, link);
 }
 
-void split(char* command)
-{
-    // Essa função separa uma string em tokens com um delimitador " ".
-    // Resta mudar ela para ela salvar os tokens em algum lugar ao invés de só
-    // imprimir. Se você não for usar, pode apagar.
-    char* token;
-
-    token = strtok(command, " ");
-
-    while (token != NULL) {
-        printf("R: %s\n", token);
-        token = strtok(NULL, " ");
-    }
-}

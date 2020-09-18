@@ -1,6 +1,6 @@
 Alunos:
 Emanuel Lima de Sousa - 9009493
-João Seckler - 
+João Seckler - 4603521
 
 Compilação:
 Para compilar, basta executar make.
@@ -9,6 +9,5 @@ Execução:
 Para executar, basta rodar ./bccsh
 
 TODO:
-> Split input into space separated words -> Vê a função split em builtin.c
 > Usar $PWD e $USER no prompt
-> Prompt e chamadas externas: João
+> Prompt: João
