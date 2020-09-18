@@ -8,21 +8,26 @@
 
 #include "builtin.h"
 
-#define MAX_WORDS 30
+#define MAX_WORDS 50
+#define MAX_CWD_LENGTH 200
+#define MAX_PROMPT_LENGTH 250
 
 void split(char *, char **);
 
 int main()
 {
-    char* command;
-    char* arg;
+    char* command, * arg, * user, cwd[MAX_CWD_LENGTH], prompt[MAX_PROMPT_LENGTH];
     char* ptrv[MAX_WORDS];
     int wstatus, err;
     pid_t child;
 
     using_history();
 
-    while ((command = readline(">> "))) {
+    user = getlogin();
+    getcwd(cwd, MAX_CWD_LENGTH);
+    snprintf(prompt, MAX_PROMPT_LENGTH, "{%s@%s} ", user, cwd);
+
+    while ((command = readline(prompt))) {
         add_history(command);
 
         if (!strncmp(command, "mkdir", 5)) {
@@ -48,6 +53,9 @@ int main()
             }
         }
 
+        user = getlogin();
+        getcwd(cwd, MAX_CWD_LENGTH);
+        snprintf(prompt, MAX_PROMPT_LENGTH, "{%s@%s} ", user, cwd);
         free(command);
     }
     printf("\n");
