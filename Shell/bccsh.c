@@ -39,6 +39,9 @@ int main()
         } else if (!strncmp(command, "ln -s", 5)) {
             arg = &(command[6]);
             ln_s(arg);
+        } else if (!strncmp(command, "cd", 2)) {
+            arg = &(command[3]);
+            cd(arg);
         }
 
         else {

@@ -37,3 +37,7 @@ void ln_s(char* command)
     symlink(file, link);
 }
 
+void cd(char* path)
+{
+  chdir(path);
+}
