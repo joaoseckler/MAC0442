@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -pedantic -std=gnu11
+CFLAGS=-g -Wall -Wextra -pedantic -std=gnu11
 DEPFLAGS=-lreadline
 TARGET=bccsh
 
