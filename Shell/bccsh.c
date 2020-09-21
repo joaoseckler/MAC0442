@@ -15,6 +15,7 @@
 
 void split(char *, char **);
 void handler();
+void handler_parent();
 
 int main()
 {
@@ -23,9 +24,13 @@ int main()
     int wstatus, err;
     pid_t child;
 
-    struct sigaction act;
-    act.sa_handler = handler;
-    sigaction(SIGINT, &act, NULL);
+    struct sigaction act1, act2;
+    act1.sa_handler = handler;
+    act2.sa_handler = handler_parent;
+    act1.sa_flags = act2.sa_flags = 0;
+    sigemptyset(&(act1.sa_mask));
+    sigemptyset(&(act2.sa_mask));
+    sigaction(SIGINT, &act1, NULL);
 
     using_history();
 
@@ -53,7 +58,9 @@ int main()
         else {
             split(command, ptrv);
             if ((child = fork())) {
+                sigaction(SIGINT, &act2, NULL);
                 wait(&wstatus);
+                sigaction(SIGINT, &act1, NULL);
             } else {
                 if ((err = execvp(command, ptrv)) == -1) {
                     printf("Não foi possível executar o comando\n");
@@ -95,4 +102,8 @@ void handler() {
     rl_on_new_line();
     rl_replace_line("", 0);
     rl_redisplay();
+}
+
+void handler_parent() {
+  printf("\n");
 }
