@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include "aux.h"
 
+extern pthread_mutex_t * mutexv;
+extern int * indices;
+
 int main(int argc, char * argv[])
 {
 
@@ -42,6 +45,9 @@ int main(int argc, char * argv[])
     prv[i].name = malloc(30 * sizeof(char));
     sscanf(line, "%s %d %d %d\n", prv[i].name,
         &prv[i].t0, &prv[i].dt, &prv[i].deadline);
+    prv[i].remaining = (float) prv[i].dt;
+    prv[i].id = i;
+    prv[i].created = 0;
     pthread_mutex_init(mutexv + i, NULL);
     /* pthread_mutex_lock(mutexv + i); */
     indices[i] = i;
@@ -56,7 +62,7 @@ int main(int argc, char * argv[])
   }
 
 
-  void (*sched[3])(struct pr *, int, FILE*, int) = {fcfs, fcfs, fcfs};
+  void (*sched[3])(struct pr *, int, FILE*, int) = {fcfs, srtn, fcfs};
   sched[escalonador - 1](prv, nprocesses, fp, d);
 
   /****************** Free allocated memory ***************************/

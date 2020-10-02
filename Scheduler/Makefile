@@ -5,4 +5,4 @@ LDLIBS=-pthread
 ep1: ep1.c aux.o
 
 clean:
-	rm -f *.o *.out
+	rm -f *.o *.out ep1
