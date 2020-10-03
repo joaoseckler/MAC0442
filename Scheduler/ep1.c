@@ -31,8 +31,9 @@ int main(int argc, char * argv[])
     exit(EXIT_FAILURE);
   }
 
-  while ((getline(&line, &m, fp) != -1))
+  while ((getline(&line, &m, fp) != -1)) {
     nprocesses++;
+  }
 
   struct pr * prv = malloc(nprocesses * sizeof(struct pr));
   mutexv = malloc(nprocesses * sizeof(pthread_mutex_t));

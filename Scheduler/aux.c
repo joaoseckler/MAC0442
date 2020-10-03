@@ -152,6 +152,7 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
     }
   }
   fprintf(fp, "%d\n", contextchange);
+  free(queue);
 }
 
 void timediff(struct timespec *a, struct timespec *b, struct timespec *result)
@@ -166,11 +167,12 @@ void timediff(struct timespec *a, struct timespec *b, struct timespec *result)
     result->tv_nsec = b->tv_nsec - a->tv_nsec;
 }
 
-int enqueue(struct pr ** queue, struct pr * item, int front, int * rear, int n)
+int enqueue(struct pr ** queue, struct pr * item, int front, int *rear, int n)
 {
-  int r, i;
-  for (i = *rear; i != front && item->dt < queue[i]->dt; i = (i - 1) % n)
+  int i, r;
+  for (i = *rear - 1; i != front && item->dt < queue[i]->dt; i = (i - 1) % n) {
     queue[(i + 1) % n] = queue[i];
+  }
   *rear = (*rear + 1) % n;
   r = (i + 1) % n;
   queue[r] = item;
