@@ -1,18 +1,20 @@
 #include <pthread.h>
 #include <time.h>
 
+/* one mutex for each process */
 extern pthread_mutex_t * mutexv;
+/* list of indices of the above array */
 extern int * indices;
 
 struct pr {
   char * name;
   pthread_t thread;
-  int t0;
-  int dt;
+  int t0; // Initial time
+  int dt; // Duration of process
   int deadline;
-  float remaining;
-  int id;
-  int created;
+  float remaining; // Time remaining for the process to complete
+  int id; // integer identifier for the process
+  int created; // Is the thread created already or not
 };
 
 void fcfs(struct pr *prv, int n, FILE *fp, int d);
