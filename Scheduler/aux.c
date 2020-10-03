@@ -16,9 +16,9 @@ void *thread_routine (void *arg)
 
   while(1) {
     pthread_mutex_lock(mutexv + i);
-    nanosleep(&t, NULL);
     dummy = dummy << 1; // Operação aritmética!!!
     pthread_mutex_unlock(mutexv + i);
+    nanosleep(&t, NULL);
     pthread_testcancel();
   }
   pthread_exit(0);
