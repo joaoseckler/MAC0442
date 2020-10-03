@@ -31,9 +31,9 @@ int main(int argc, char * argv[])
     exit(EXIT_FAILURE);
   }
 
-  while ((getline(&line, &m, fp) != -1)) {
-    nprocesses++;
-  }
+  for (char c = getc(fp); c != EOF; c = getc(fp))
+    if (c == '\n')
+      nprocesses++;
 
   struct pr * prv = malloc(nprocesses * sizeof(struct pr));
   mutexv = malloc(nprocesses * sizeof(pthread_mutex_t));
@@ -53,7 +53,10 @@ int main(int argc, char * argv[])
     /* pthread_mutex_lock(mutexv + i); */
     indices[i] = i;
     i++;
+    free(line);
+    line = NULL;
   }
+  free(line);
 
   fclose(fp);
   fp = fopen(outfile, "w");
@@ -61,7 +64,6 @@ int main(int argc, char * argv[])
     printf("erro ao abrir arquivo %s\n", outfile);
     exit(EXIT_FAILURE);
   }
-
 
   void (*sched[3])(struct pr *, int, FILE*, int) = {fcfs, srtn, fcfs};
   sched[escalonador - 1](prv, nprocesses, fp, d);
