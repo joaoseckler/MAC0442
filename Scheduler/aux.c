@@ -29,42 +29,39 @@ void *thread_routine (void *arg)
 
 void fcfs(struct pr *prv, int n, FILE *fp, int d)
 {
-  struct timespec t0, dt, tr, start, now, elapsed;
+  struct timespec t, start, now;
+  float wait, dummy, elapsed = 0;
   int contextchange = 0;
 
   clock_gettime(CLOCK_REALTIME, &start);
-  elapsed.tv_sec = 0;
-  elapsed.tv_nsec = 0;
 
   for (int i = 0; i < n; i++) {
-    t0.tv_nsec = 0;
-    t0.tv_sec = (time_t) prv[i].t0;
-    dt.tv_nsec = 0;
-    dt.tv_sec = (time_t) prv[i].dt;
-
-    if (t0.tv_sec > elapsed.tv_sec) {
-      timediff(&elapsed, &t0, &t0);
-      nanosleep(&t0, NULL);
+    printf("elapsed: %f\n", elapsed);
+    wait = prv[i].t0 - elapsed;
+    if (wait > 0) {
+      t.tv_sec = (time_t) wait;
+      t.tv_nsec = (long) (modff(wait, &dummy) * 1e9);
+      nanosleep(&t, NULL);
     }
     else
       contextchange++;
 
     clock_gettime(CLOCK_REALTIME, &now);
-    timediff(&start, &now, &t0);
+    timediff(&start, &now, &t);
+    elapsed = t.tv_sec + t.tv_nsec*1e-9;
 
     pthread_create(&prv[i].thread, NULL, thread_routine, (void *) (indices + i));
-    nanosleep(&dt, NULL);
+    t.tv_sec = (time_t) prv[i].dt;
+    t.tv_nsec = (long) (modff(prv[i].dt, &dummy) * 1e9);
+    nanosleep(&t, NULL);
     pthread_cancel(prv[i].thread);
     pthread_join(prv[i].thread, NULL);
 
     clock_gettime(CLOCK_REALTIME, &now);
-    timediff(&start, &now, &elapsed);
-    timediff(&t0, &elapsed, &tr);
-
-    fprintf(fp, "%s %ld,%.3ld %ld.%.3ld\n", prv[i].name,
-        elapsed.tv_sec, elapsed.tv_nsec/1000000,
-        tr.tv_sec, tr.tv_nsec/100000);
-
+    timediff(&start, &now, &t);
+    elapsed = t.tv_sec + t.tv_nsec*1e-9;
+    fprintf(fp, "%s %f %f\n", prv[i].name, elapsed, elapsed - prv[i].t0);
+    printf("%s %f %f\n", prv[i].name, elapsed, elapsed - prv[i].t0);
   }
   fprintf(fp, "%d\n", contextchange);
 }
