@@ -81,7 +81,7 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
 
   clock_gettime(CLOCK_REALTIME, &start);
 
-  while (i < n || running || rear != (front + 1) % n) {
+  while (i < n || running || !EMPTY_QUEUE) {
     wait = FLT_MAX;
     if (i < n) {
       wait = (float) prv[i].t0 - elapsed;
@@ -138,7 +138,7 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
       tr = elapsed - running->t0;
       fprintf(fp, "%s %f %f\n", running->name, elapsed, tr);
 
-      if (rear != (front + 1) % n) { /* if queue not empty */
+      if (!EMPTY_QUEUE) { /* if queue not empty */
         front = (front + 1) % n;
         running = queue[front];
         if (running->created) {
@@ -170,7 +170,7 @@ void rr(struct pr *prv, int n, FILE *fp, int d)
 
   clock_gettime(CLOCK_REALTIME, &start);
 
-  while (i < n || running || rear != (front + 1) % n) {
+  while (i < n || running || !EMPTY_QUEUE) {
     wait = FLT_MAX;
     if (i < n) {
       wait = (float) prv[i].t0 - elapsed;
@@ -222,7 +222,7 @@ void rr(struct pr *prv, int n, FILE *fp, int d)
       tr = elapsed - running->t0;
       fprintf(fp, "%s %f %f\n", running->name, elapsed, tr);
 
-      if (rear != (front + 1) % n) { /* if queue not empty */
+      if (!EMPTY_QUEUE) {
         front = (front + 1) % n;
         running = queue[front];
         if (running->created) {
@@ -238,9 +238,6 @@ void rr(struct pr *prv, int n, FILE *fp, int d)
         running = NULL;
 
     } else {/* O próximo evento é o quantum acabar */
-
-
-
       t.tv_sec = (time_t) qremaining;
       t.tv_nsec = (long) (modff(qremaining, &dummy) * 1e9);
       nanosleep(&t, NULL);
