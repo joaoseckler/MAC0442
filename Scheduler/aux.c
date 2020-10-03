@@ -163,7 +163,7 @@ void rr(struct pr *prv, int n, FILE *fp, int d)
   struct timespec t, start, now;
   float dummy, wait, tr, elapsed = 0, qremaining = RR_QUANTUM;
   int contextchange = 0;
-  struct pr * running = NULL, * swap_dummy;
+  struct pr * running = NULL;
 
   struct pr ** queue = malloc(sizeof(struct pr *) * n);
   int front = 0, rear = 1, i = 0;
@@ -249,9 +249,10 @@ void rr(struct pr *prv, int n, FILE *fp, int d)
 
       /* Preempção !!! */
       pthread_mutex_lock(mutexv + running->id);
-      swap_dummy = running;
-      running = queue[front + 1];
-      queue[front + 1] = swap_dummy;
+      queue[rear] = running;
+      running = queue[(front + 1) % n];
+      rear = (rear + 1) % n;
+      front = (front + 1) % n;
 
       if (running->created) {
         pthread_mutex_unlock(mutexv + running->id);
