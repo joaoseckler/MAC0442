@@ -65,7 +65,7 @@ int main(int argc, char * argv[])
     exit(EXIT_FAILURE);
   }
 
-  void (*sched[3])(struct pr *, int, FILE*, int) = {fcfs, srtn, fcfs};
+  void (*sched[3])(struct pr *, int, FILE*, int) = {fcfs, srtn, rr};
   sched[escalonador - 1](prv, nprocesses, fp, d);
 
   /****************** Free allocated memory ***************************/

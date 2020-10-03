@@ -17,6 +17,7 @@ struct pr {
 
 void fcfs(struct pr *prv, int n, FILE *fp, int d);
 void srtn(struct pr *prv, int n, FILE *fp, int d);
+void rr(struct pr *prv, int n, FILE *fp, int d);
 
 void *thread_routine (void *arg);
 
@@ -25,4 +26,7 @@ void timediff(struct timespec *a, struct timespec *b, struct timespec *result);
 
 /* Enqueue item in queue. Queue is ordered by its items integer field dt
  * Returns the position in which item was enqueued (0 is the first position) */
-int enqueue(struct pr ** queue, struct pr * item, int front, int *rear, int n);
+int srtn_enqueue(struct pr ** queue, struct pr * item,
+                 int front, int *rear, int n);
+void rr_enqueue(struct pr ** queue, struct pr * item, int *rear, int n);
+

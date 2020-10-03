@@ -7,6 +7,9 @@
 pthread_mutex_t * mutexv = NULL;
 int * indices = NULL;
 
+#define RR_QUANTUM 0.3
+#define EMPTY_QUEUE (rear == (front + 1) % n)
+
 void *thread_routine (void *arg)
 {
   int i = * (int * ) arg, dummy = 0;
@@ -98,7 +101,7 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
       /* We could do elapsed += wait, but that would accumulate errors */
 
       if (running) {
-        if (enqueue(queue, prv + i, front, &rear, n) == front + 1 &&
+        if (srtn_enqueue(queue, prv + i, front, &rear, n) == front + 1 &&
             running->remaining > (float) prv[i].dt) {
 
           /* Preempção !!! */
@@ -124,8 +127,8 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
     } else { /* O próximo evento é um processo acabar */
       t.tv_sec = (time_t) running->remaining;
       t.tv_nsec = (long) (modff(running->remaining, &dummy) * 1e9);
+;
       nanosleep(&t, NULL);
-
       clock_gettime(CLOCK_REALTIME, &now);
       timediff(&start, &now, &t);
       elapsed = t.tv_sec + t.tv_nsec*1e-9;
@@ -155,6 +158,116 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
   free(queue);
 }
 
+void rr(struct pr *prv, int n, FILE *fp, int d)
+{
+  struct timespec t, start, now;
+  float dummy, wait, tr, elapsed = 0, qremaining = RR_QUANTUM;
+  int contextchange = 0;
+  struct pr * running = NULL, * swap_dummy;
+
+  struct pr ** queue = malloc(sizeof(struct pr *) * n);
+  int front = 0, rear = 1, i = 0;
+
+  clock_gettime(CLOCK_REALTIME, &start);
+
+  while (i < n || running || rear != (front + 1) % n) {
+    wait = FLT_MAX;
+    if (i < n) {
+      wait = (float) prv[i].t0 - elapsed;
+    }
+
+    if (running == NULL ||
+        (wait < running->remaining && (EMPTY_QUEUE || wait < qremaining))) {
+      /* O próximo evento é a chegada de um processo */
+
+      t.tv_sec = (time_t) wait;
+      t.tv_nsec = (long) (modff(wait, &dummy) * 1e9);
+      nanosleep(&t, NULL);
+      if (running) {
+        running->remaining -= wait;
+        if (!EMPTY_QUEUE)
+          qremaining -= wait;
+      }
+
+      clock_gettime(CLOCK_REALTIME, &now);
+      timediff(&start, &now, &t);
+      elapsed = t.tv_sec + t.tv_nsec*1e-9;
+      /* We could do elapsed += wait, but that would accumulate errors */
+
+      if (running == NULL) {
+        running = prv + i;
+        pthread_create(&running->thread, NULL, thread_routine,
+                       (void *) (indices + running->id));
+        running->created = 1;
+
+      } else {
+        rr_enqueue(queue, prv + i, &rear, n);
+      }
+      i++;
+
+    } else if (running->remaining < wait &&
+        (EMPTY_QUEUE || running->remaining < qremaining)) {
+      /* O próximo evento é um processo acabar */
+      t.tv_sec = (time_t) running->remaining;
+      t.tv_nsec = (long) (modff(running->remaining, &dummy) * 1e9);
+      nanosleep(&t, NULL);
+      qremaining -= running->remaining;
+
+      clock_gettime(CLOCK_REALTIME, &now);
+      timediff(&start, &now, &t);
+      elapsed = t.tv_sec + t.tv_nsec*1e-9;
+
+      pthread_cancel(running->thread);
+      pthread_join(running->thread, NULL);
+      tr = elapsed - running->t0;
+      fprintf(fp, "%s %f %f\n", running->name, elapsed, tr);
+
+      if (rear != (front + 1) % n) { /* if queue not empty */
+        front = (front + 1) % n;
+        running = queue[front];
+        if (running->created) {
+          pthread_mutex_unlock(mutexv + running->id);
+        }
+        else {
+          pthread_create(&running->thread, NULL, thread_routine,
+                         (void *) (indices + running->id));
+          running->created = 1;
+        }
+        contextchange++;
+      } else
+        running = NULL;
+
+    } else {/* O próximo evento é o quantum acabar */
+
+
+
+      t.tv_sec = (time_t) qremaining;
+      t.tv_nsec = (long) (modff(qremaining, &dummy) * 1e9);
+      nanosleep(&t, NULL);
+      running->remaining -= qremaining;
+      qremaining = RR_QUANTUM;
+
+      /* Preempção !!! */
+      pthread_mutex_lock(mutexv + running->id);
+      swap_dummy = running;
+      running = queue[front + 1];
+      queue[front + 1] = swap_dummy;
+
+      if (running->created) {
+        pthread_mutex_unlock(mutexv + running->id);
+      }
+      else {
+        pthread_create(&running->thread, NULL, thread_routine,
+                       (void *) (indices + running->id));
+        running->created = 1;
+      }
+      contextchange++;
+    }
+  }
+  fprintf(fp, "%d\n", contextchange);
+  free(queue);
+}
+
 void timediff(struct timespec *a, struct timespec *b, struct timespec *result)
 {
   result->tv_sec = b->tv_sec - a->tv_sec;
@@ -167,7 +280,8 @@ void timediff(struct timespec *a, struct timespec *b, struct timespec *result)
     result->tv_nsec = b->tv_nsec - a->tv_nsec;
 }
 
-int enqueue(struct pr ** queue, struct pr * item, int front, int *rear, int n)
+int srtn_enqueue(struct pr ** queue, struct pr * item,
+                 int front, int *rear, int n)
 {
   int i, r;
   for (i = *rear - 1; i != front && item->dt < queue[i]->dt; i = (i - 1) % n) {
@@ -179,4 +293,9 @@ int enqueue(struct pr ** queue, struct pr * item, int front, int *rear, int n)
   return r;
 }
 
+void rr_enqueue(struct pr ** queue, struct pr * item, int *rear, int n)
+{
+  queue[*rear] = item;
+  *rear = (*rear + 1) % n;
+}
 
