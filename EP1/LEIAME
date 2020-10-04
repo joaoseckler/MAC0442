@@ -8,4 +8,4 @@ Para compilar o ep1, basta executar make dentro da pasta Scheduler.
 
 Execução:
 Para executar o bccsh, basta rodar ./bccsh
-Para executar o ep1, basta rodar ./ep1 <args>
+Para executar o ep1, basta rodar ./ep1 <args> de dentro do bccsh
