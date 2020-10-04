@@ -42,7 +42,7 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
             t.tv_sec = (time_t)wait;
             t.tv_nsec = (long)(modff(wait, &dummy) * 1e9);
             nanosleep(&t, NULL);
-        } else
+        } else if (elapsed != 0)
             contextchange++;
 
         clock_gettime(CLOCK_REALTIME, &now);
