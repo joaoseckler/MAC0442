@@ -5,6 +5,9 @@
 
 #include "scheduler.h"
 
+int d = 0;
+struct pr* prv = NULL;
+
 int main(int argc, char* argv[])
 {
     /******* Treat arguments *******************************************/
@@ -32,9 +35,6 @@ int main(int argc, char* argv[])
             nprocesses++;
 
     struct pr* prv = malloc(nprocesses * sizeof(struct pr));
-    mutexv = malloc(nprocesses * sizeof(pthread_mutex_t));
-    indices = malloc(nprocesses * sizeof(int));
-    n_cpu = malloc(nprocesses * sizeof(int));
 
     rewind(fp);
 
@@ -49,8 +49,8 @@ int main(int argc, char* argv[])
         prv[i].remaining = prv[i].dt;
         prv[i].id = i;
         prv[i].created = 0;
-        pthread_mutex_init(mutexv + i, NULL);
-        indices[i] = i;
+        prv[i].n_cpu = -1;
+        pthread_mutex_init(&prv[i].mutex, NULL);
         i++;
         free(line);
         line = NULL;
@@ -72,10 +72,7 @@ int main(int argc, char* argv[])
     fclose(fp);
     for (int i = 0; i < nprocesses; i++) {
         free(prv[i].name);
-        pthread_mutex_destroy(mutexv + i);
+        pthread_mutex_destroy(&prv[i].mutex);
     }
     free(prv);
-    free(indices);
-    free(mutexv);
-    free(n_cpu);
 }

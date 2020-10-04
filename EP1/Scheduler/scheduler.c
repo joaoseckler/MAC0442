@@ -8,27 +8,27 @@
 
 #include "scheduler.h"
 
-pthread_mutex_t* mutexv = NULL;
-int* n_cpu = NULL;
-int* indices = NULL;
-
 #define RR_QUANTUM 0.3 * SECOND;
 #define EMPTY_QUEUE (n == 1 || rear == (front + 1) % n)
 
 void* thread_routine(void* arg)
 {
-    int i = *(int*)arg, dummy = 0;
+    struct pr *p = (struct pr*)arg;
+    int dummy = 0;
     struct timespec t;
     t.tv_sec = 0;
     t.tv_nsec = 1e7; // 1 ns is 1e-9
 
-    n_cpu[i] = sched_getcpu();
+    p->n_cpu = sched_getcpu();
+    if (d) {
+        fprintf(stderr, "Processo %s começou a usar a CPU %d\n", p->name, p->n_cpu);
+    }
 
     while (1) {
-        pthread_mutex_lock(mutexv + i);
+        pthread_mutex_lock(&p->mutex);
         dummy = dummy << 1; // Operação aritmética!!!
-        n_cpu[i] = sched_getcpu();
-        pthread_mutex_unlock(mutexv + i);
+        p->n_cpu = sched_getcpu();
+        pthread_mutex_unlock(&p->mutex);
         nanosleep(&t, NULL);
         pthread_testcancel();
     }
@@ -41,6 +41,10 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
     struct timespec t, start, now;
     float wait, dummy, elapsed = 0;
     int contextchange = 0;
+    struct pr *running = NULL;
+
+    struct pr** queue = malloc(sizeof(struct pr*) * n);
+    int front = 0, rear = 1, i = 0;
 
     clock_gettime(CLOCK_REALTIME, &start);
 
@@ -49,64 +53,67 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
     int made_deadline = 0;
 #endif /* DEADLINES */
 
-    for (int i = 0; i < n; i++) {
-        wait = prv[i].t0 - elapsed;
-        if (wait > 0) {
+    while (i < n || running || !EMPTY_QUEUE) {
+        wait = FLT_MAX;
+        if (i < n)
+            wait = prv[i].t0 - elapsed;
+        if (running == NULL || wait < running->remaining) {
+            /* Próximo evento é a chegada de um processo */
             t.tv_sec = (time_t)wait;
             t.tv_nsec = (long)(modff(wait, &dummy) * 1e9);
             nanosleep(&t, NULL);
-        } else if (elapsed != 0)
-            contextchange++;
 
-        if (d) {
-            fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n", prv[i].name, (int)prv[i].t0, (int)prv[i].dt, (int)prv[i].deadline);
-        }
+            if (running) {
+                running->remaining -= wait;
+                simple_enqueue(queue, prv + i, &rear, n);
+            } else {
+                running = prv + i;
+                pthread_create(&running->thread, NULL, thread_routine,
+                    (void*)(prv + running->id));
+            }
+            if (d) {
+                fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n", prv[i].name, (int)prv[i].t0, (int)prv[i].dt, (int)prv[i].deadline);
+            }
+            i++;
+        } else {
+            /* Próximo evento é o término de um processo */
 
-        clock_gettime(CLOCK_REALTIME, &now);
-        timediff(&start, &now, &t);
-        elapsed = t.tv_sec + t.tv_nsec * 1e-9;
+            t.tv_sec = (time_t)running->remaining;
+            t.tv_nsec = (long)(modff(running->remaining, &dummy) * 1e9);
+            nanosleep(&t, NULL);
 
-        pthread_create(&prv[i].thread, NULL, thread_routine, (void*)(indices + i));
+            clock_gettime(CLOCK_REALTIME, &now);
+            timediff(&start, &now, &t);
+            elapsed = t.tv_sec + t.tv_nsec * 1e-9;
 
-        if (d) {
-            fprintf(stderr, "Processo %s começou a usar a CPU %d\n", prv[i].name, n_cpu);
-        }
-
-        t.tv_sec = (time_t)prv[i].dt;
-        t.tv_nsec = (long)(modff(prv[i].dt, &dummy) * 1e9);
-        nanosleep(&t, NULL);
-
-        pthread_cancel(prv[i].thread);
+            pthread_cancel(running->thread);
+            pthread_join(running->thread, NULL);
+            fprintf(fp, "%s %f %f\n", running->name, elapsed / SECOND, (elapsed - running->t0) / SECOND);
+            if (d) {
+                fprintf(stderr, "Processo %s encerrou. Liberou a CPU %d\n",
+                        running->name, running->n_cpu);
+            }
 
 #ifdef DEADLINES
-        clock_gettime(CLOCK_REALTIME, &now);
-        timediff(&start, &now, &t);
-        elapsed = t.tv_sec + t.tv_nsec * 1e-9;
-        if (elapsed < prv[i].deadline)
-            made_deadline++;
-#endif /* DEADLINES */
+            if (elapsed < prv[i].deadline)
+                made_deadline++;
+#endif
 
-        if (d) {
-            fprintf(stderr, "Processo %s encerrou. Liberou a CPU %d\n", prv[i].name, n_cpu);
-        }
-
-        pthread_join(prv[i].thread, NULL);
-
-        clock_gettime(CLOCK_REALTIME, &now);
-        timediff(&start, &now, &t);
-        elapsed = t.tv_sec + t.tv_nsec * 1e-9;
-        fprintf(fp, "%s %f %f\n", prv[i].name, elapsed / SECOND, (elapsed - prv[i].t0) / SECOND);
-        if (d) {
-            fprintf(stderr, "Finalizado o processo %s. Escrevendo '%s %f %f' no arquivo de saída.\n",
-                prv[i].name, prv[i].name, elapsed / SECOND, (elapsed - prv[i].t0) / SECOND);
+            if (!EMPTY_QUEUE) {
+                front = (front + 1) % n;
+                running = queue[front];
+                pthread_create(&running->thread, NULL, thread_routine, (void*)(prv + running->id));
+                running->created = 1;
+                contextchange++;
+                if (d)
+                    fprintf(stderr, "%d-ésima mudança de contexto\n", contextchange);
+            } else
+                running = NULL;
         }
     }
     fprintf(fp, "%d\n", contextchange);
-    if (d) {
-        fprintf(stderr, "Quantidade de mudanças de contexto: %d\n", contextchange);
-    }
 #ifdef DEADLINES
-    fprintf(fp_deadlines, "%d %d\n", made_deadline, n)
+    fprintf(fp_deadlines, "%d %d\n", made_deadline, n);
 #endif /* DEADLINES */
 }
 
@@ -150,20 +157,20 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
                 if (srtn_enqueue(queue, prv + i, front, &rear, n) == front + 1 && running->remaining > (float)prv[i].dt) {
 
                     /* Preempção !!! */
-                    pthread_mutex_lock(mutexv + running->id);
+                    pthread_mutex_lock(&running->mutex);
                     swap_dummy = running;
                     running = queue[front + 1];
                     queue[front + 1] = swap_dummy;
 
                     pthread_create(&running->thread, NULL, thread_routine,
-                        (void*)(indices + running->id));
+                        (void*)(prv + running->id));
                     running->created = 1;
                     contextchange++;
                 }
             } else {
                 running = prv + i;
                 pthread_create(&running->thread, NULL, thread_routine,
-                    (void*)(indices + running->id));
+                    (void*)(prv + running->id));
                 running->created = 1;
             }
             i++;
@@ -189,10 +196,10 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
                 front = (front + 1) % n;
                 running = queue[front];
                 if (running->created) {
-                    pthread_mutex_unlock(mutexv + running->id);
+                    pthread_mutex_unlock(&running->mutex);
                 } else {
                     pthread_create(&running->thread, NULL, thread_routine,
-                        (void*)(indices + running->id));
+                        (void*)(prv + running->id));
                     running->created = 1;
                 }
                 contextchange++;
@@ -203,7 +210,7 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
     fprintf(fp, "%d\n", contextchange);
     free(queue);
 #ifdef DEADLINES
-    fprintf(fp_deadlines, "%d %d\n", made_deadline, n)
+    fprintf(fp_deadlines, "%d %d\n", made_deadline, n);
 #endif /* DEADLINES */
 }
 
@@ -250,11 +257,11 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
             if (running == NULL) {
                 running = prv + i;
                 pthread_create(&running->thread, NULL, thread_routine,
-                    (void*)(indices + running->id));
+                    (void*)(prv + running->id));
                 running->created = 1;
 
             } else {
-                rr_enqueue(queue, prv + i, &rear, n);
+                simple_enqueue(queue, prv + i, &rear, n);
             }
             i++;
 
@@ -282,10 +289,10 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
                 front = (front + 1) % n;
                 running = queue[front];
                 if (running->created) {
-                    pthread_mutex_unlock(mutexv + running->id);
+                    pthread_mutex_unlock(&running->mutex);
                 } else {
                     pthread_create(&running->thread, NULL, thread_routine,
-                        (void*)(indices + running->id));
+                        (void*)(prv + running->id));
                     running->created = 1;
                 }
                 contextchange++;
@@ -300,17 +307,17 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
             qremaining = RR_QUANTUM;
 
             /* Preempção !!! */
-            pthread_mutex_lock(mutexv + running->id);
+            pthread_mutex_lock(&running->mutex);
             queue[rear] = running;
             running = queue[(front + 1) % n];
             rear = (rear + 1) % n;
             front = (front + 1) % n;
 
             if (running->created) {
-                pthread_mutex_unlock(mutexv + running->id);
+                pthread_mutex_unlock(&running->mutex);
             } else {
                 pthread_create(&running->thread, NULL, thread_routine,
-                    (void*)(indices + running->id));
+                    (void*)(prv + running->id));
                 running->created = 1;
             }
             contextchange++;
@@ -320,7 +327,7 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
     fprintf(fp, "%d\n", contextchange);
 
 #ifdef DEADLINES
-    fprintf(fp_deadlines, "%d %d\n", made_deadline, n)
+    fprintf(fp_deadlines, "%d %d\n", made_deadline, n);
 #endif /* DEADLINES */
 
     free(queue);
@@ -350,7 +357,7 @@ int srtn_enqueue(struct pr** queue, struct pr* item,
     return r;
 }
 
-void rr_enqueue(struct pr** queue, struct pr* item, int* rear, int n)
+void simple_enqueue(struct pr** queue, struct pr* item, int* rear, int n)
 {
     queue[*rear] = item;
     *rear = (*rear + 1) % n;
