@@ -1,11 +1,15 @@
+#define _GNU_SOURCE
+
 #include <float.h>
 #include <math.h>
+#include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "scheduler.h"
 
 pthread_mutex_t* mutexv = NULL;
+int* n_cpu = NULL;
 int* indices = NULL;
 
 #define RR_QUANTUM 0.3 * SECOND;
@@ -18,9 +22,12 @@ void* thread_routine(void* arg)
     t.tv_sec = 0;
     t.tv_nsec = 1e7; // 1 ns is 1e-9
 
+    n_cpu[i] = sched_getcpu();
+
     while (1) {
         pthread_mutex_lock(mutexv + i);
         dummy = dummy << 1; // Operação aritmética!!!
+        n_cpu[i] = sched_getcpu();
         pthread_mutex_unlock(mutexv + i);
         nanosleep(&t, NULL);
         pthread_testcancel();
@@ -45,23 +52,44 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
         } else
             contextchange++;
 
+        if (d) {
+            fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n", prv[i].name, (int)prv[i].t0, (int)prv[i].dt, (int)prv[i].deadline);
+        }
+
         clock_gettime(CLOCK_REALTIME, &now);
         timediff(&start, &now, &t);
         elapsed = t.tv_sec + t.tv_nsec * 1e-9;
 
         pthread_create(&prv[i].thread, NULL, thread_routine, (void*)(indices + i));
+
+        if (d) {
+            fprintf(stderr, "Processo %s começou a usar a CPU %d\n", prv[i].name, n_cpu);
+        }
+
         t.tv_sec = (time_t)prv[i].dt;
         t.tv_nsec = (long)(modff(prv[i].dt, &dummy) * 1e9);
         nanosleep(&t, NULL);
         pthread_cancel(prv[i].thread);
+
+        if (d) {
+            fprintf(stderr, "Processo %s encerrou. Liberou a CPU %d\n", prv[i].name, n_cpu);
+        }
+
         pthread_join(prv[i].thread, NULL);
 
         clock_gettime(CLOCK_REALTIME, &now);
         timediff(&start, &now, &t);
         elapsed = t.tv_sec + t.tv_nsec * 1e-9;
         fprintf(fp, "%s %f %f\n", prv[i].name, elapsed / SECOND, (elapsed - prv[i].t0) / SECOND);
+        if (d) {
+            fprintf(stderr, "Finalizado o processo %s. Escrevendo '%s %f %f' no arquivo de saída.\n",
+                prv[i].name, prv[i].name, elapsed / SECOND, (elapsed - prv[i].t0) / SECOND);
+        }
     }
     fprintf(fp, "%d\n", contextchange);
+    if (d) {
+        fprintf(stderr, "Quantidade de mudanças de contexto: %d\n", contextchange);
+    }
 }
 
 void srtn(struct pr* prv, int n, FILE* fp, int d)

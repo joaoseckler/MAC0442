@@ -5,17 +5,14 @@
 
 #include "scheduler.h"
 
-extern pthread_mutex_t* mutexv;
-extern int* indices;
-
 int main(int argc, char* argv[])
 {
     /******* Treat arguments *******************************************/
-
     int escalonador = atoi(argv[1]);
     char* infile = argv[2];
     char* outfile = argv[3];
-    int d = 0;
+    d = 0;
+
     if (argc >= 5 && strcmp(argv[4], "d") == 0)
         d = 1;
     /*******************************************************************/
@@ -37,6 +34,7 @@ int main(int argc, char* argv[])
     struct pr* prv = malloc(nprocesses * sizeof(struct pr));
     mutexv = malloc(nprocesses * sizeof(pthread_mutex_t));
     indices = malloc(nprocesses * sizeof(int));
+    n_cpu = malloc(nprocesses * sizeof(int));
 
     rewind(fp);
 
@@ -52,7 +50,6 @@ int main(int argc, char* argv[])
         prv[i].id = i;
         prv[i].created = 0;
         pthread_mutex_init(mutexv + i, NULL);
-        /* pthread_mutex_lock(mutexv + i); */
         indices[i] = i;
         i++;
         free(line);
@@ -80,4 +77,5 @@ int main(int argc, char* argv[])
     free(prv);
     free(indices);
     free(mutexv);
+    free(n_cpu);
 }

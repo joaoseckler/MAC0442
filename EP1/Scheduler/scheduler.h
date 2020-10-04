@@ -8,6 +8,9 @@
 extern pthread_mutex_t* mutexv;
 /* list of indices of the above array */
 extern int* indices;
+extern int* n_cpu;
+extern struct pr* prv;
+extern int d;
 
 #define SECOND .1
 
