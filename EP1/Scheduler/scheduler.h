@@ -8,8 +8,8 @@
 extern struct pr* prv;
 extern int d;
 
-#define SECOND 1
-/* #define DEADLINES */
+#define SECOND .01
+#define DEADLINES
 
 struct pr {
     char* name;
