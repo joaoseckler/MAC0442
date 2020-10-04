@@ -268,7 +268,7 @@ void timediff(struct timespec *a, struct timespec *b, struct timespec *result)
   result->tv_sec = b->tv_sec - a->tv_sec;
 
   if (a->tv_nsec > b->tv_nsec) {
-    result->tv_nsec = a->tv_nsec - b->tv_nsec;
+    result->tv_nsec = 1000000000 - a->tv_nsec + b->tv_nsec;
     result->tv_sec--;
   }
   else
