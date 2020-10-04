@@ -44,9 +44,12 @@ int main(int argc, char * argv[])
   int i = 0;
   while ((getline(&line, &m, fp) != -1)) {
     prv[i].name = malloc(30 * sizeof(char));
-    sscanf(line, "%s %d %d %d\n", prv[i].name,
+    sscanf(line, "%s %f %f %f\n", prv[i].name,
         &prv[i].t0, &prv[i].dt, &prv[i].deadline);
-    prv[i].remaining = (float) prv[i].dt;
+    prv[i].t0 *= SECOND;
+    prv[i].dt *= SECOND;
+    prv[i].deadline *= SECOND;
+    prv[i].remaining = prv[i].dt;
     prv[i].id = i;
     prv[i].created = 0;
     pthread_mutex_init(mutexv + i, NULL);

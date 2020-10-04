@@ -6,12 +6,14 @@ extern pthread_mutex_t * mutexv;
 /* list of indices of the above array */
 extern int * indices;
 
+#define SECOND .1
+
 struct pr {
   char * name;
   pthread_t thread;
-  int t0; // Initial time
-  int dt; // Duration of process
-  int deadline;
+  float t0; // Initial time
+  float dt; // Duration of process
+  float deadline;
   float remaining; // Time remaining for the process to complete
   int id; // integer identifier for the process
   int created; // Is the thread created already or not

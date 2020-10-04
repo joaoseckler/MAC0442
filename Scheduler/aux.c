@@ -7,7 +7,7 @@
 pthread_mutex_t * mutexv = NULL;
 int * indices = NULL;
 
-#define RR_QUANTUM 0.3
+#define RR_QUANTUM 0.3 * SECOND;
 #define EMPTY_QUEUE (rear == (front + 1) % n)
 
 void *thread_routine (void *arg)
@@ -36,7 +36,6 @@ void fcfs(struct pr *prv, int n, FILE *fp, int d)
   clock_gettime(CLOCK_REALTIME, &start);
 
   for (int i = 0; i < n; i++) {
-    printf("elapsed: %f\n", elapsed);
     wait = prv[i].t0 - elapsed;
     if (wait > 0) {
       t.tv_sec = (time_t) wait;
@@ -60,8 +59,7 @@ void fcfs(struct pr *prv, int n, FILE *fp, int d)
     clock_gettime(CLOCK_REALTIME, &now);
     timediff(&start, &now, &t);
     elapsed = t.tv_sec + t.tv_nsec*1e-9;
-    fprintf(fp, "%s %f %f\n", prv[i].name, elapsed, elapsed - prv[i].t0);
-    printf("%s %f %f\n", prv[i].name, elapsed, elapsed - prv[i].t0);
+    fprintf(fp, "%s %f %f\n", prv[i].name, elapsed/SECOND, (elapsed - prv[i].t0)/SECOND);
   }
   fprintf(fp, "%d\n", contextchange);
 }
@@ -69,7 +67,7 @@ void fcfs(struct pr *prv, int n, FILE *fp, int d)
 void srtn(struct pr *prv, int n, FILE *fp, int d)
 {
   struct timespec t, start, now;
-  float dummy, wait, tr, elapsed = 0;
+  float dummy, wait, elapsed = 0;
   int contextchange = 0;
   struct pr * running = NULL, * swap_dummy;
 
@@ -132,8 +130,8 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
 
       pthread_cancel(running->thread);
       pthread_join(running->thread, NULL);
-      tr = elapsed - running->t0;
-      fprintf(fp, "%s %f %f\n", running->name, elapsed, tr);
+      fprintf(fp, "%s %f %f\n", running->name, (elapsed)/SECOND,
+          (elapsed - running->t0)/SECOND);
 
       if (!EMPTY_QUEUE) { /* if queue not empty */
         front = (front + 1) % n;
@@ -158,7 +156,7 @@ void srtn(struct pr *prv, int n, FILE *fp, int d)
 void rr(struct pr *prv, int n, FILE *fp, int d)
 {
   struct timespec t, start, now;
-  float dummy, wait, tr, elapsed = 0, qremaining = RR_QUANTUM;
+  float dummy, wait, elapsed = 0, qremaining = RR_QUANTUM;
   int contextchange = 0;
   struct pr * running = NULL;
 
@@ -216,8 +214,8 @@ void rr(struct pr *prv, int n, FILE *fp, int d)
 
       pthread_cancel(running->thread);
       pthread_join(running->thread, NULL);
-      tr = elapsed - running->t0;
-      fprintf(fp, "%s %f %f\n", running->name, elapsed, tr);
+      fprintf(fp, "%s %f %f\n", running->name, elapsed/SECOND,
+          (elapsed - running->t0)/SECOND);
 
       if (!EMPTY_QUEUE) {
         front = (front + 1) % n;
