@@ -1,0 +1,89 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+
+\title[EP1]{Shell e simulador de processos}
+\author{Emanuel Lima e João Seckler}
+\date{outubro de 2020}
+
+% Cores mais padrão (preto e branco, basicamente)
+% \usecolortheme{dove}
+
+\begin{document}
+\frame{\titlepage}
+
+\section{Implementação}
+\begin{frame}[fragile]
+  \frametitle{O Shell bccsh}
+
+  É basicamente composto pelo seguinte laço:
+
+  \begin{verbatim}
+  enquanto comando := readline(prompt) não é EOF
+    se comando é um embutido (mkdir, kill, ln ou cd)
+      executa o embutido
+    senão
+      divide o comando em palavras
+      se (fork())
+        wait()
+      senão
+        execv(palavras)
+
+  \end{verbatim}
+
+  Onde \verb/readline/ é definida pela biblioteca \verb/readline/,
+  prompt é construída como especificado no EP. Essa estrutura omite
+  alguns detalhes como manipulação de sinais e construção do prompt.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{O simulador de escalonamento de processos}
+  Variáveis globais:
+  \begin{itemize}
+    \item \verb\mutexv\: vetor de \verb/pthread_mutex_t/, um para cada processo
+    \item \verb\indices\: vetor de \verb/int/, um para cada processo,
+      que identifica qual posição da lista \verb\mutexv\ acessar
+  \end{itemize}
+  Comunicação entre o simulador e os processos:
+  \begin{itemize}
+    \item Criação do processo: \verb\pthread_create\
+    \item Interrupção do processo: \verb\pthread_mutex_lock\
+    \item finalização do processo: \verb\pthread_cancel\ (a thread roda
+      \verb\pthread_testcancel\ a cada laço)
+  \end{itemize}
+  Esse protocolo de comunicação permite às threads usarem o mesmo código
+  nas três implementações de escalonador. O controle de tempo é todo
+  feito no escalonador.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{O simulador de escalonamento de processos}
+  \textbf{O que há de comum} nas três implementações: um laço que roda
+  até a lista de processos acabar (e até a fila ficar vazia, quando
+  houver uma). A cada iteração do laço, o programa vê qual é o próximo
+  evento, entre:
+
+  \begin{itemize}
+    \item a chegada de um novo processo (em cujo caso, passa-se para o
+      próximo item da lista de processos)
+    \item o fim de um novo processo
+    \item preempção (no caso do \verb/STRN/, pela chegada
+      de um novo processo, no caso do \verb/round robin/, pelo fim de um
+      quantum)
+  \end{itemize}
+
+  Em cada caso, o programa espera o tempo até o evento ocorrer e
+  cuida dele.
+
+  \begin{itemize}
+    \item \verb/STRN/: fila de prioridade
+    \item \verb/round robin/: fila simples.
+  \end{itemize}
+
+\end{frame}
+
+\section{Resultados de experimentos}
+
+\end{document}
