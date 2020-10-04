@@ -1,13 +1,15 @@
 CC=gcc
-CFLAGS=-g -Wall -Wextra -pedantic -std=gnu11
-DEPFLAGS=-lreadline
-TARGET=bccsh
+CFLAGS=-Wall -Wextra -pedantic -std=gnu11
+LDLIBS=-lreadline
 
-$(TARGET): builtin.o $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) builtin.o $(TARGET).c $(DEPFLAGS)
+SRC=bccsh.c builtin.c aux.c
+OBJ=$(SRC:.c=.o)
+EXEC=bccsh
 
-builtin.o: builtin.c builtin.h
-	$(CC) $(CFLAGS) -c builtin.c
+all: $(EXEC)
+
+$(EXEC): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
 clean:
-	rm -f *.o *.out $(TARGET)
+	rm -rf $(OBJ) $(EXEC)

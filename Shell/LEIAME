@@ -3,11 +3,9 @@ Emanuel Lima de Sousa - 9009493
 João Seckler - 4603521
 
 Compilação:
-Para compilar, basta executar make.
+Para compilar o bccsh, basta executar make dentro da pasta Shell.
+Para compilar o ep1, basta executar make dentro da pasta Scheduler.
 
 Execução:
-Para executar, basta rodar ./bccsh
-
-TODO:
-> Usar $PWD e $USER no prompt
-> Prompt: João
+Para executar o bccsh, basta rodar ./bccsh
+Para executar o ep1, basta rodar ./ep1 <args>
