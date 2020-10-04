@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
         prv[i].id = i;
         prv[i].created = 0;
         prv[i].n_cpu = -1;
+        prv[i].print = 1;
         pthread_mutex_init(&prv[i].mutex, NULL);
         i++;
         free(line);
@@ -64,8 +65,8 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    void (*sched[3])(struct pr*, int, FILE*, int) = { fcfs, srtn, rr };
-    sched[escalonador - 1](prv, nprocesses, fp, d);
+    void (*sched[3])(struct pr*, int, FILE*) = { fcfs, srtn, rr };
+    sched[escalonador - 1](prv, nprocesses, fp);
 
     /****************** Free allocated memory ***************************/
 

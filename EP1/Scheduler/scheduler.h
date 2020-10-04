@@ -8,8 +8,8 @@
 extern struct pr* prv;
 extern int d;
 
-#define SECOND .1
-#define DEADLINES
+#define SECOND 1
+/* #define DEADLINES */
 
 struct pr {
     char* name;
@@ -22,6 +22,7 @@ struct pr {
     int created; // Is the thread created already or not
     pthread_mutex_t mutex;
     int n_cpu; // Number of the cpu that the thread is using
+    int print; // Whether to print information or not
 };
 
 void fcfs(struct pr* prv, int n, FILE* fp);
