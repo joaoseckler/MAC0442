@@ -36,7 +36,7 @@ void* thread_routine(void* arg)
 }
 
 
-void fcfs(struct pr* prv, int n, FILE* fp, int d)
+void fcfs(struct pr* prv, int n, FILE* fp)
 {
     struct timespec t, start, now;
     float wait, dummy, elapsed = 0;
@@ -51,7 +51,7 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
 #ifdef DEADLINES
     FILE* fp_deadlines = fopen("deadlines", "w");
     int made_deadline = 0;
-#endif /* DEADLINES */
+#endif
 
     while (i < n || running || !EMPTY_QUEUE) {
         wait = FLT_MAX;
@@ -71,9 +71,11 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
                 pthread_create(&running->thread, NULL, thread_routine,
                     (void*)(prv + running->id));
             }
-            if (d) {
-                fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n", prv[i].name, (int)prv[i].t0, (int)prv[i].dt, (int)prv[i].deadline);
-            }
+            if (d)
+                fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n",
+                        prv[i].name, (int)(prv[i].t0/SECOND),
+                        (int)(prv[i].dt/SECOND), 
+                        (int)(prv[i].deadline/SECOND));
             i++;
         } else {
             /* Próximo evento é o término de um processo */
@@ -95,7 +97,7 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
             }
 
 #ifdef DEADLINES
-            if (elapsed < prv[i].deadline)
+            if (elapsed < running->deadline)
                 made_deadline++;
 #endif
 
@@ -112,12 +114,13 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
         }
     }
     fprintf(fp, "%d\n", contextchange);
+    free(queue);
 #ifdef DEADLINES
-    fprintf(fp_deadlines, "%d %d\n", made_deadline, n);
+    fprintf(fp_deadlines, "%f\n", (float)made_deadline/(float)n);
 #endif /* DEADLINES */
 }
 
-void srtn(struct pr* prv, int n, FILE* fp, int d)
+void srtn(struct pr* prv, int n, FILE* fp)
 {
     struct timespec t, start, now;
     float dummy, wait, elapsed = 0;
@@ -184,8 +187,9 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
             elapsed = t.tv_sec + t.tv_nsec * 1e-9;
 
             pthread_cancel(running->thread);
+
 #ifdef DEADLINES
-            if (elapsed < prv[i].deadline)
+            if (elapsed < running->deadline)
                 made_deadline++;
 #endif
             pthread_join(running->thread, NULL);
@@ -210,11 +214,11 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
     fprintf(fp, "%d\n", contextchange);
     free(queue);
 #ifdef DEADLINES
-    fprintf(fp_deadlines, "%d %d\n", made_deadline, n);
+    fprintf(fp_deadlines, "%f\n", (float)made_deadline/(float)n);
 #endif /* DEADLINES */
 }
 
-void rr(struct pr* prv, int n, FILE* fp, int d)
+void rr(struct pr* prv, int n, FILE* fp)
 {
     struct timespec t, start, now;
     float dummy, wait, elapsed = 0, qremaining = RR_QUANTUM;
@@ -278,7 +282,7 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
 
             pthread_cancel(running->thread);
 #ifdef DEADLINES
-            if (elapsed < prv[i].deadline)
+            if (elapsed < running->deadline)
                 made_deadline++;
 #endif /* DEADLINES */
             pthread_join(running->thread, NULL);
@@ -327,7 +331,7 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
     fprintf(fp, "%d\n", contextchange);
 
 #ifdef DEADLINES
-    fprintf(fp_deadlines, "%d %d\n", made_deadline, n);
+    fprintf(fp_deadlines, "%f\n", (float)made_deadline/(float)n);
 #endif /* DEADLINES */
 
     free(queue);

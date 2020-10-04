@@ -24,9 +24,9 @@ struct pr {
     int n_cpu; // Number of the cpu that the thread is using
 };
 
-void fcfs(struct pr* prv, int n, FILE* fp, int d);
-void srtn(struct pr* prv, int n, FILE* fp, int d);
-void rr(struct pr* prv, int n, FILE* fp, int d);
+void fcfs(struct pr* prv, int n, FILE* fp);
+void srtn(struct pr* prv, int n, FILE* fp);
+void rr(struct pr* prv, int n, FILE* fp);
 
 void* thread_routine(void* arg);
 
