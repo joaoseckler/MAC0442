@@ -9,7 +9,7 @@ pthread_mutex_t* mutexv = NULL;
 int* indices = NULL;
 
 #define RR_QUANTUM 0.3 * SECOND;
-#define EMPTY_QUEUE (rear == (front + 1) % n)
+#define EMPTY_QUEUE (n == 1 || rear == (front + 1) % n)
 
 void* thread_routine(void* arg)
 {
@@ -120,7 +120,6 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
         } else { /* O próximo evento é um processo acabar */
             t.tv_sec = (time_t)running->remaining;
             t.tv_nsec = (long)(modff(running->remaining, &dummy) * 1e9);
-            ;
             nanosleep(&t, NULL);
             clock_gettime(CLOCK_REALTIME, &now);
             timediff(&start, &now, &t);
