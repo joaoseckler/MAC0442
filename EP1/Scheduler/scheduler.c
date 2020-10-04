@@ -35,6 +35,7 @@ void* thread_routine(void* arg)
     pthread_exit(0);
 }
 
+
 void fcfs(struct pr* prv, int n, FILE* fp, int d)
 {
     struct timespec t, start, now;
@@ -42,6 +43,11 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
     int contextchange = 0;
 
     clock_gettime(CLOCK_REALTIME, &start);
+
+#ifdef DEADLINES
+    FILE* fp_deadlines = fopen("deadlines", "w");
+    int made_deadline = 0;
+#endif /* DEADLINES */
 
     for (int i = 0; i < n; i++) {
         wait = prv[i].t0 - elapsed;
@@ -69,7 +75,16 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
         t.tv_sec = (time_t)prv[i].dt;
         t.tv_nsec = (long)(modff(prv[i].dt, &dummy) * 1e9);
         nanosleep(&t, NULL);
+
         pthread_cancel(prv[i].thread);
+
+#ifdef DEADLINES
+        clock_gettime(CLOCK_REALTIME, &now);
+        timediff(&start, &now, &t);
+        elapsed = t.tv_sec + t.tv_nsec * 1e-9;
+        if (elapsed < prv[i].deadline)
+            made_deadline++;
+#endif /* DEADLINES */
 
         if (d) {
             fprintf(stderr, "Processo %s encerrou. Liberou a CPU %d\n", prv[i].name, n_cpu);
@@ -90,6 +105,9 @@ void fcfs(struct pr* prv, int n, FILE* fp, int d)
     if (d) {
         fprintf(stderr, "Quantidade de mudanças de contexto: %d\n", contextchange);
     }
+#ifdef DEADLINES
+    fprintf(fp_deadlines, "%d %d\n", made_deadline, n)
+#endif /* DEADLINES */
 }
 
 void srtn(struct pr* prv, int n, FILE* fp, int d)
@@ -103,6 +121,11 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
     int front = 0, rear = 1, i = 0;
 
     clock_gettime(CLOCK_REALTIME, &start);
+
+#ifdef DEADLINES
+    FILE* fp_deadlines = fopen("deadlines", "w");
+    int made_deadline = 0;
+#endif /* DEADLINES */
 
     while (i < n || running || !EMPTY_QUEUE) {
         wait = FLT_MAX;
@@ -154,6 +177,10 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
             elapsed = t.tv_sec + t.tv_nsec * 1e-9;
 
             pthread_cancel(running->thread);
+#ifdef DEADLINES
+            if (elapsed < prv[i].deadline)
+                made_deadline++;
+#endif
             pthread_join(running->thread, NULL);
             fprintf(fp, "%s %f %f\n", running->name, (elapsed) / SECOND,
                 (elapsed - running->t0) / SECOND);
@@ -175,6 +202,9 @@ void srtn(struct pr* prv, int n, FILE* fp, int d)
     }
     fprintf(fp, "%d\n", contextchange);
     free(queue);
+#ifdef DEADLINES
+    fprintf(fp_deadlines, "%d %d\n", made_deadline, n)
+#endif /* DEADLINES */
 }
 
 void rr(struct pr* prv, int n, FILE* fp, int d)
@@ -188,6 +218,11 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
     int front = 0, rear = 1, i = 0;
 
     clock_gettime(CLOCK_REALTIME, &start);
+
+#ifdef DEADLINES
+    FILE* fp_deadlines = fopen("deadlines", "w");
+    int made_deadline = 0;
+#endif /* DEADLINES */
 
     while (i < n || running || !EMPTY_QUEUE) {
         wait = FLT_MAX;
@@ -235,6 +270,10 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
             elapsed = t.tv_sec + t.tv_nsec * 1e-9;
 
             pthread_cancel(running->thread);
+#ifdef DEADLINES
+            if (elapsed < prv[i].deadline)
+                made_deadline++;
+#endif /* DEADLINES */
             pthread_join(running->thread, NULL);
             fprintf(fp, "%s %f %f\n", running->name, elapsed / SECOND,
                 (elapsed - running->t0) / SECOND);
@@ -277,7 +316,13 @@ void rr(struct pr* prv, int n, FILE* fp, int d)
             contextchange++;
         }
     }
+
     fprintf(fp, "%d\n", contextchange);
+
+#ifdef DEADLINES
+    fprintf(fp_deadlines, "%d %d\n", made_deadline, n)
+#endif /* DEADLINES */
+
     free(queue);
 }
 
