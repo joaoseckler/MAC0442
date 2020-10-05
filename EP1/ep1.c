@@ -43,9 +43,6 @@ int main(int argc, char* argv[])
         prv[i].name = malloc(30 * sizeof(char));
         sscanf(line, "%s %f %f %f\n", prv[i].name,
             &prv[i].t0, &prv[i].dt, &prv[i].deadline);
-        prv[i].t0 *= SECOND;
-        prv[i].dt *= SECOND;
-        prv[i].deadline *= SECOND;
         prv[i].remaining = prv[i].dt;
         prv[i].id = i;
         prv[i].created = 0;

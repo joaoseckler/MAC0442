@@ -3,8 +3,7 @@ Emanuel Lima de Sousa - 9009493
 João Seckler - 4603521
 
 Compilação:
-Para compilar o bccsh, basta executar make dentro da pasta Shell.
-Para compilar o ep1, basta executar make dentro da pasta Scheduler.
+$ make
 
 Execução:
 Para executar o bccsh, basta rodar ./bccsh
