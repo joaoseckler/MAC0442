@@ -15,16 +15,15 @@ results = {}
 for trace in TRACES:
     for alg in [1, 2, 3]:
         for rep in range(REPS):
-            execute = subprocess.Popen(["../ep1", alg, f"out_{trace}_{alg}_{rep}.txt"],
-                                       shell=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       universal_newlines=True)
+            execute = subprocess.run(
+                f"./ep1 {alg} {trace} out.txt", shell=True)
+
+            print(execute)
 
             with open("deadlines", 'r') as file:
                 deadline.append(float(file.readline()))
 
-            with open(f"out_{trace}_{alg}_{rep}.txt", 'r') as file:
+            with open(f"out.txt", 'r') as file:
                 context.append(int(file.readlines()[-1]))
 
         mean_deadline = st.mean(deadline)
