@@ -77,15 +77,9 @@ void fcfs(struct pr* prv, int n, FILE* fp)
             }
             if (d)
                 fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n",
-<<<<<<< HEAD
-                        prv[i].name, (int)(prv[i].t0/SECOND),
-                        (int)(prv[i].dt/SECOND),
-                        (int)(prv[i].deadline/SECOND));
-=======
                         prv[i].name, (int)(prv[i].t0),
                         (int)(prv[i].dt),
                         (int)(prv[i].deadline));
->>>>>>> a367129... Merge subdirectories into main folder
             i++;
         } else {
             /* Próximo evento é o término de um processo */
@@ -100,11 +94,7 @@ void fcfs(struct pr* prv, int n, FILE* fp)
 
             pthread_cancel(running->thread);
             pthread_join(running->thread, NULL);
-<<<<<<< HEAD
-            fprintf(fp, "%s %f %f\n", running->name, elapsed / SECOND, (elapsed - running->t0) / SECOND);
-=======
             fprintf(fp, "%s %f %f\n", running->name, elapsed, elapsed - running->t0);
->>>>>>> a367129... Merge subdirectories into main folder
             if (d)
                 fprintf(stderr, "Processo %s encerrou. Liberou a CPU %d\n",
                         running->name, running->n_cpu);
@@ -170,15 +160,9 @@ void srtn(struct pr* prv, int n, FILE* fp)
 
             if (d)
                 fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n",
-<<<<<<< HEAD
-                        prv[i].name, (int)(prv[i].t0/SECOND),
-                        (int)(prv[i].dt/SECOND),
-                        (int)(prv[i].deadline/SECOND));
-=======
                         prv[i].name, (int)(prv[i].t0),
                         (int)(prv[i].dt),
                         (int)(prv[i].deadline));
->>>>>>> a367129... Merge subdirectories into main folder
 
             if (running) {
                 if (srtn_enqueue(queue, prv + i, front, &rear, n) == front + 1 && running->remaining > (float)prv[i].dt) {
@@ -219,13 +203,8 @@ void srtn(struct pr* prv, int n, FILE* fp)
 
             pthread_cancel(running->thread);
             pthread_join(running->thread, NULL);
-<<<<<<< HEAD
-            fprintf(fp, "%s %f %f\n", running->name, (elapsed) / SECOND,
-                (elapsed - running->t0) / SECOND);
-=======
             fprintf(fp, "%s %f %f\n", running->name, (elapsed),
                 (elapsed - running->t0));
->>>>>>> a367129... Merge subdirectories into main folder
             if (d)
                 fprintf(stderr, "Processo %s encerrou. Liberou a CPU %d\n",
                         running->name, running->n_cpu);
@@ -289,15 +268,9 @@ void rr(struct pr* prv, int n, FILE* fp)
             nanosleep(&t, NULL);
             if (d)
                 fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n",
-<<<<<<< HEAD
-                        prv[i].name, (int)(prv[i].t0/SECOND),
-                        (int)(prv[i].dt/SECOND),
-                        (int)(prv[i].deadline/SECOND));
-=======
                         prv[i].name, (int)(prv[i].t0),
                         (int)(prv[i].dt),
                         (int)(prv[i].deadline));
->>>>>>> a367129... Merge subdirectories into main folder
             if (running) {
                 running->remaining -= wait;
                 if (!EMPTY_QUEUE)
@@ -332,13 +305,8 @@ void rr(struct pr* prv, int n, FILE* fp)
 
             pthread_cancel(running->thread);
             pthread_join(running->thread, NULL);
-<<<<<<< HEAD
-            fprintf(fp, "%s %f %f\n", running->name, elapsed / SECOND,
-                (elapsed - running->t0) / SECOND);
-=======
             fprintf(fp, "%s %f %f\n", running->name, elapsed,
                 (elapsed - running->t0));
->>>>>>> a367129... Merge subdirectories into main folder
             if (d)
                 fprintf(stderr, "Processo %s encerrou. Liberou a CPU %d\n",
                         running->name, running->n_cpu);
