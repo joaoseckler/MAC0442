@@ -266,6 +266,11 @@ void rr(struct pr* prv, int n, FILE* fp)
             t.tv_sec = (time_t)wait;
             t.tv_nsec = (long)(modff(wait, &dummy) * 1e9);
             nanosleep(&t, NULL);
+            if (d)
+                fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n",
+                        prv[i].name, (int)(prv[i].t0/SECOND),
+                        (int)(prv[i].dt/SECOND),
+                        (int)(prv[i].deadline/SECOND));
             if (running) {
                 running->remaining -= wait;
                 if (!EMPTY_QUEUE)
@@ -276,13 +281,6 @@ void rr(struct pr* prv, int n, FILE* fp)
             timediff(&start, &now, &t);
             elapsed = t.tv_sec + t.tv_nsec * 1e-9;
             /* We could do elapsed += wait, but that would accumulate errors */
-
-            if (d)
-                fprintf(stderr, "Chegada de processo: '%s %d %d %d'\n",
-                        prv[i].name, (int)(prv[i].t0/SECOND),
-                        (int)(prv[i].dt/SECOND),
-                        (int)(prv[i].deadline/SECOND));
-
             if (running == NULL) {
                 running = prv + i;
                 pthread_create(&running->thread, NULL, thread_routine,
@@ -339,6 +337,10 @@ void rr(struct pr* prv, int n, FILE* fp)
             nanosleep(&t, NULL);
             running->remaining -= qremaining;
             qremaining = RR_QUANTUM;
+
+            clock_gettime(CLOCK_REALTIME, &now);
+            timediff(&start, &now, &t);
+            elapsed = t.tv_sec + t.tv_nsec * 1e-9;
 
             /* Preempção !!! */
             pthread_mutex_lock(&running->mutex);
